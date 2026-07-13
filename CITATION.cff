@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+title: "RivaPlan: QGIS scripts for river planform morphology analysis"
+message: "If you use or refer to this archived RivaPlan script release, please cite it as below."
+type: software
+authors:
+  - family-names: Sharma
+    given-names: Rohit
+version: "0.1.0"
+doi: "10.5281/zenodo.20740988"
+date-released: "2026-06-17"
+repository-code: "https://doi.org/10.5281/zenodo.20740988"
+abstract: "RivaPlan v0.1.0 is a pre-plugin Python/PyQGIS script archive for river planform morphology analysis in QGIS. It includes scripts for centerline generation, river width extraction, bankline shifting, centerline shifting, sinuosity analysis, and local curvature estimation."
+keywords:
+  - QGIS
+  - PyQGIS
+  - river planform morphology
+  - river centerline
+  - sinuosity
+  - curvature
+  - fluvial geomorphology
+license: "All rights reserved"

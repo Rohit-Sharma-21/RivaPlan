@@ -1,0 +1,13 @@
+[general]
+name=RivaPlan
+description=RivaPlan automates river planform morphology analysis in QGIS.
+about=RivaPlan is a QGIS Processing plugin for automated river planform morphology analysis. The current version includes tools for centreline generation, river width extraction, bankline shifting, centreline shifting, sinuosity analysis, and local curvature estimation.
+version=1.0.0
+qgisMinimumVersion=3.28
+author=Rohit Sharma
+email=r_sharma@ce.iitr.ac.in
+repository=https://github.com/Rohit-Sharma-21/RivaPlan
+icon=logo.png
+category=Vector
+experimental=True
+hasProcessingProvider=yes

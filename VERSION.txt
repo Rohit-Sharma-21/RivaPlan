@@ -1,0 +1,27 @@
+RivaPlan v0.1.0
+
+Release type: Pre-plugin reviewer-access script archive
+Release year: 2026
+Status: Under development
+
+Software name: RivaPlan
+Planned final form: QGIS Processing plugin
+Programming language: Python / PyQGIS
+Required software: QGIS 3.x with Processing Toolbox
+
+Included scripts:
+- generate_centerline.py
+- width.py
+- shifting_calculation.py
+- centerline_shift.py
+- sinuosity.py
+- curvature.py
+
+Current DOI:
+https://doi.org/10.5281/zenodo.20740988
+
+Current access status:
+Reviewer-access / restricted or embargoed archive for editorial and peer-review evaluation.
+
+Planned public release:
+The complete RivaPlan QGIS Processing plugin is planned for public release through GitHub and Zenodo under a GPL-compatible open-source license after article acceptance/publication.
