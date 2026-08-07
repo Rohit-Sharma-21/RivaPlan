@@ -4,7 +4,7 @@ name=RivaPlan
 
 description=RivaPlan automates river planform morphology analysis in QGIS.
 
-about=RivaPlan is an open-source QGIS Processing plugin for automated river planform morphology analysis. It provides tools for river centreline generation, channel width measurement, bankline shifting, centreline shifting, sinuosity analysis, and local curvature estimation.
+about=RivaPlan is an open-source QGIS Processing plugin for automated river planform morphology analysis. It provides tools for river centerline generation, channel width measurement, bankline shifting, centerline shifting, sinuosity analysis, and local curvature estimation.
 
 version=2.0.0
 
@@ -23,7 +23,7 @@ icon=logo.png
 
 category=Vector
 
-tags=river,river morphology,fluvial geomorphology,river centreline,channel width,channel migration,bankline,sinuosity,curvature
+tags=river,river morphology,fluvial geomorphology,river centerline,channel width,channel migration,bankline,sinuosity,curvature
 
 experimental=True
 deprecated=False
