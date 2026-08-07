@@ -16,10 +16,10 @@ RivaPlan v2.0.0 is distributed through the official QGIS Plugin Repository.
 
 The plugin provides tools for:
 
-- River centreline generation
+- River centerline generation
 - River width measurement
 - Bankline shifting analysis
-- Centreline shifting analysis
+- Centerline shifting analysis
 - Sinuosity analysis
 - Local curvature estimation
 
