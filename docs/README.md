@@ -8,10 +8,10 @@ RivaPlan provides tools for automated river planform morphology analysis within 
 
 Detailed documentation will be provided for the following tools:
 
-1. [Centreline Generation](centreline.md)
+1. [Centerline Generation](centerline.md)
 2. [River Width](width.md)
 3. [Bankline Shifting](bankline_shifting.md)
-4. [Centreline Shifting](centreline_shifting.md)
+4. [Centerline Shifting](centerline_shifting.md)
 5. [Sinuosity](sinuosity.md)
 6. [Local Curvature](curvature.md)
 
