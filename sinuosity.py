@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
 # RivaPlan: QGIS Processing tools for river planform morphology analysis
 # Copyright (C) 2026 Rohit Sharma
-#
-# All rights reserved for this reviewer-access script archive.
-# This file is provided for editorial and peer-review evaluation only.
-#
-# The public release of RivaPlan is planned as a QGIS Processing plugin
-# under a GPL-compatible open-source license after article acceptance/publication.
+
 
 
 from qgis.PyQt.QtCore import QCoreApplication, QVariant
