@@ -14,7 +14,7 @@
 
 **RivaPlan** is an open-source QGIS Processing plugin developed for automated and reproducible analysis of river planform morphology from vector river-bank data.
 
-The plugin integrates a set of tools for generating representative river centrelines and quantifying important channel characteristics, including river width, bankline migration, centreline migration, sinuosity, and local curvature.
+The plugin integrates a set of tools for generating representative river centerlines and quantifying important channel characteristics, including river width, bankline migration, centerline migration, sinuosity, and local curvature.
 
 RivaPlan is designed to reduce repetitive GIS operations and provide a consistent workflow for river morphology and channel-change analysis within the QGIS environment.
 
@@ -34,10 +34,10 @@ After installation, RivaPlan is available as a dedicated processing provider wit
 
 | Tool | Description |
 |---|---|
-| **Centreline Generation** | Generates a representative river centreline from paired river banklines. |
+| **Centerline Generation** | Generates a representative river centerline from paired river banklines. |
 | **River Width** | Measures channel width along the river using centreline-based transects. |
 | **Bankline Shifting** | Quantifies lateral displacement between river banklines from different time periods. |
-| **Centreline Shifting** | Measures spatial migration between river centrelines from different time periods. |
+| **Centerline Shifting** | Measures spatial migration between river centerlines from different time periods. |
 | **Sinuosity** | Calculates river sinuosity using reach-based analysis windows. |
 | **Local Curvature** | Estimates local centreline curvature and identifies bend direction. |
 
@@ -68,7 +68,7 @@ A typical RivaPlan workflow consists of:
 1. Prepare the river banklines.
 2. Generate the river centreline.
 3. Calculate river width.
-4. Quantify bankline and/or centreline migration between different dates.
+4. Quantify bankline and/or centerline migration between different dates.
 5. Calculate river sinuosity.
 6. Estimate local curvature and bend direction.
 
@@ -77,17 +77,17 @@ The individual RivaPlan algorithms can also be used independently depending on t
 ---
 ## Example Outputs
 
-### River Centreline Generation
+### River Centerline Generation
 
-RivaPlan generates a representative river centreline from the supplied left and right banklines.
+RivaPlan generates a representative river centerline from the supplied left and right banklines.
 
 <p align="center">
-  <img src="docs/images/centerline_generation_output.png" alt="River centreline generated using RivaPlan" width="850">
+  <img src="docs/images/centerline_generation_output.png" alt="River centerline generated using RivaPlan" width="850">
 </p>
 
 ### River Width
 
-Channel-width transects are generated at user-defined chainage intervals along the river centreline.
+Channel-width transects are generated at user-defined chainage intervals along the river centerline.
 
 <p align="center">
   <img src="docs/images/river_width_output.png" alt="River width measurement output" width="850">
@@ -95,10 +95,10 @@ Channel-width transects are generated at user-defined chainage intervals along t
 
 ### Channel Shifting
 
-RivaPlan quantifies lateral river migration using bankline and centreline shifting tools.
+RivaPlan quantifies lateral river migration using bankline and centerline shifting tools.
 
 <p align="center">
-  <img src="docs/images/centerline_shifting_output.png" alt="Centreline shifting output" width="850">
+  <img src="docs/images/centerline_shifting_output.png" alt="Centerline shifting output" width="850">
 </p>
 
 ### Sinuosity
@@ -121,7 +121,7 @@ Local curvature can be estimated using the angle-gradient and three-point circum
 
 ## Input Data
 
-RivaPlan primarily works with vector river-bank and centreline datasets.
+RivaPlan primarily works with vector river-bank and centerline datasets.
 
 For reliable distance-based measurements:
 
