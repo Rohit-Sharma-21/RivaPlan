@@ -1,8 +1,8 @@
-# Centreline Generation
+# Centerline Generation
 
-The **Bank lines to centerline** tool generates a representative river centreline from paired left and right river-bank polylines.
+The **Bank lines to centerline** tool generates a representative river centerline from paired left and right river-bank polylines.
 
-The algorithm constructs a river-channel polygon from the two banklines and derives a continuous centreline through a filtered Voronoi network.
+The algorithm constructs a river-channel polygon from the two banklines and derives a continuous centerline through a filtered Voronoi network.
 
 ---
 
@@ -21,7 +21,7 @@ In QGIS, open:
 | **Input Left Bank Layer** | Polyline representing one river bank. |
 | **Input Right Bank Layer** | Polyline representing the opposite river bank. |
 | **CRS** | Projected coordinate reference system used during processing. |
-| **Centerline** | Output vector layer containing the generated river centreline. |
+| **Centerline** | Output vector layer containing the generated river centerline. |
 
 A projected CRS is recommended because the algorithm uses distance-based geometric operations.
 
@@ -30,16 +30,16 @@ A projected CRS is recommended because the algorithm uses distance-based geometr
 ## Tool Interface
 
 <p align="center">
-  <img src="images/centerline_generation_tool.png" alt="RivaPlan centreline generation tool" width="900">
+  <img src="images/centerline_generation_tool.png" alt="RivaPlan centerline generation tool" width="900">
 </p>
 
-The user supplies the left and right bankline layers, selects an appropriate projected CRS, and defines the output centreline layer.
+The user supplies the left and right bankline layers, selects an appropriate projected CRS, and defines the output centerline layer.
 
 ---
 
 ## Method
 
-The centreline is generated through the following automated workflow:
+The centerline is generated through the following automated workflow:
 
 1. The first and last vertices of both river banks are extracted.
 
@@ -61,22 +61,22 @@ The centreline is generated through the following automated workflow:
 
 10. **Dijkstra's shortest-path algorithm** is used to identify one continuous route through the filtered Voronoi network.
 
-11. The resulting route is exported as the final river centreline.
+11. The resulting route is exported as the final river centerline.
 
 ---
 
 ## Output
 
-The tool produces a vector line representing the generated river centreline.
+The tool produces a vector line representing the generated river centerline.
 
 <p align="center">
-  <img src="images/centerline_generation_output.png" alt="River centreline generated using RivaPlan" width="900">
+  <img src="images/centerline_generation_output.png" alt="River centerline generated using RivaPlan" width="900">
 </p>
 
-The generated centreline can subsequently be used as input for other RivaPlan tools, including:
+The generated centerline can subsequently be used as input for other RivaPlan tools, including:
 
 - River Width
-- Centreline Shifting
+- Centerline Shifting
 - Sinuosity
 - Local Curvature
 
@@ -84,7 +84,7 @@ The generated centreline can subsequently be used as input for other RivaPlan to
 
 ## Input Data Recommendations
 
-For reliable centreline generation:
+For reliable centerline generation:
 
 - Use continuous left and right banklines covering approximately the same river reach.
 - Both banklines should have identifiable upstream and downstream endpoints.
@@ -99,4 +99,4 @@ For reliable centreline generation:
 
 The **5 m bank densification interval** and **0.50 map-unit bank-exclusion distance** are currently fixed internal parameters and do not require user input.
 
-Intermediate processing layers are generated as temporary QGIS layers, while only the final centreline is returned as the primary output.
+Intermediate processing layers are generated as temporary QGIS layers, while only the final centerline is returned as the primary output.
