@@ -20,6 +20,16 @@ RivaPlan is designed to reduce repetitive GIS operations and provide a consisten
 
 ---
 
+## RivaPlan in QGIS
+
+After installation, RivaPlan is available as a dedicated processing provider within the **QGIS Processing Toolbox**, providing six tools for river planform morphology analysis.
+
+<p align="center">
+  <img src="docs/images/introduce_rivaplan.png" alt="RivaPlan tools in the QGIS Processing Toolbox" width="850">
+</p>
+
+---
+
 ## Tools Available in RivaPlan
 
 | Tool | Description |
@@ -63,6 +73,49 @@ A typical RivaPlan workflow consists of:
 6. Estimate local curvature and bend direction.
 
 The individual RivaPlan algorithms can also be used independently depending on the requirements of the analysis.
+
+---
+## Example Outputs
+
+### River Centreline Generation
+
+RivaPlan generates a representative river centreline from the supplied left and right banklines.
+
+<p align="center">
+  <img src="docs/images/centerline_generation_output.png" alt="River centreline generated using RivaPlan" width="850">
+</p>
+
+### River Width
+
+Channel-width transects are generated at user-defined chainage intervals along the river centreline.
+
+<p align="center">
+  <img src="docs/images/river_width_output.png" alt="River width measurement output" width="850">
+</p>
+
+### Channel Shifting
+
+RivaPlan quantifies lateral river migration using bankline and centreline shifting tools.
+
+<p align="center">
+  <img src="docs/images/centerline_shifting_output.png" alt="Centreline shifting output" width="850">
+</p>
+
+### Sinuosity
+
+Sinuosity can be analysed using fixed segments or sliding analysis windows.
+
+<p align="center">
+  <img src="docs/images/sinuosity_output.png" alt="River sinuosity analysis output" width="850">
+</p>
+
+### Local Curvature
+
+Local curvature can be estimated using the angle-gradient and three-point circumcircle approaches.
+
+<p align="center">
+  <img src="docs/images/local_curvature_output.png" alt="Local curvature analysis output" width="850">
+</p>
 
 ---
 
