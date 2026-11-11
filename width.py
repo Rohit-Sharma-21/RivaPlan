@@ -7,7 +7,7 @@ import math
 import time
 from collections import Counter
 
-from qgis.PyQt.QtCore import QCoreApplication, QMetaType
+from qgis.PyQt.QtCore import QCoreApplication, QVariant
 from qgis.core import (
     QgsProcessingParameterDefinition,
     QgsProcessing, QgsProcessingAlgorithm, QgsProcessingParameterCrs,
@@ -325,12 +325,12 @@ class WidthOfRiver(QgsProcessingAlgorithm):
             extended[side] = self._as_single_line_geometry(lyr, side + ' extended bank')
 
         fields = QgsFields()
-        fields.append(QgsField('Chainage', QMetaType.Type.Double))
-        fields.append(QgsField('angle', QMetaType.Type.Double))
-        fields.append(QgsField('Width', QMetaType.Type.Double))
-        fields.append(QgsField('Remark', QMetaType.Type.QString, len=120))
-        fields.append(QgsField('QC_Status', QMetaType.Type.QString, len=20))
-        fields.append(QgsField('SearchLen', QMetaType.Type.Int))
+        fields.append(QgsField('Chainage', QVariant.Double))
+        fields.append(QgsField('angle', QVariant.Double))
+        fields.append(QgsField('Width', QVariant.Double))
+        fields.append(QgsField('Remark', QVariant.String, len=120))
+        fields.append(QgsField('QC_Status', QVariant.String, len=20))
+        fields.append(QgsField('SearchLen', QVariant.Int))
         sink, dest_id = self.parameterAsSink(
             parameters, self.OUTPUT, context, fields,
             QgsWkbTypes.LineString, working_crs)

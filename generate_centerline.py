@@ -26,7 +26,7 @@ import heapq
 import time
 import math
 
-from qgis.PyQt.QtCore import QCoreApplication, QMetaType
+from qgis.PyQt.QtCore import QCoreApplication, QVariant
 from qgis.core import (QgsProcessing,
                        QgsFeature,
                        QgsField,
@@ -402,8 +402,8 @@ class mergingbanklines(QgsProcessingAlgorithm):
 
         end_cap_provider = end_cap_layer.dataProvider()
         end_cap_provider.addAttributes([
-            QgsField('cap_id', QMetaType.Type.Int),
-            QgsField('cap_len', QMetaType.Type.Double)
+            QgsField('cap_id', QVariant.Int),
+            QgsField('cap_len', QVariant.Double)
         ])
         end_cap_layer.updateFields()
 
@@ -454,8 +454,8 @@ class mergingbanklines(QgsProcessingAlgorithm):
         )
 
         channel_boundary_provider.addAttributes([
-            QgsField('boundary_id', QMetaType.Type.Int),
-            QgsField('source', QMetaType.Type.QString)
+            QgsField('boundary_id', QVariant.Int),
+            QgsField('source', QVariant.String)
         ])
         channel_boundary_layer.updateFields()
 
@@ -1008,8 +1008,8 @@ class mergingbanklines(QgsProcessingAlgorithm):
 
         midpoint_provider = midpoint_layer.dataProvider()
         midpoint_provider.addAttributes([
-            QgsField('role', QMetaType.Type.QString),
-            QgsField('closure_id', QMetaType.Type.QString)
+            QgsField('role', QVariant.String),
+            QgsField('closure_id', QVariant.String)
         ])
         midpoint_layer.updateFields()
 
@@ -1055,11 +1055,11 @@ class mergingbanklines(QgsProcessingAlgorithm):
 
         anchor_provider = anchor_layer.dataProvider()
         anchor_provider.addAttributes([
-            QgsField('role', QMetaType.Type.QString),
-            QgsField('closure_id', QMetaType.Type.QString),
-            QgsField('snap_dist', QMetaType.Type.Double),
-            QgsField('node_x', QMetaType.Type.Double),
-            QgsField('node_y', QMetaType.Type.Double)
+            QgsField('role', QVariant.String),
+            QgsField('closure_id', QVariant.String),
+            QgsField('snap_dist', QVariant.Double),
+            QgsField('node_x', QVariant.Double),
+            QgsField('node_y', QVariant.Double)
         ])
         anchor_layer.updateFields()
 
@@ -1190,9 +1190,9 @@ class mergingbanklines(QgsProcessingAlgorithm):
 
         path_edges_provider = path_edges_layer.dataProvider()
         path_edges_provider.addAttributes([
-            QgsField('sequence', QMetaType.Type.Int),
-            QgsField('source_id', QMetaType.Type.QString),
-            QgsField('seg_length', QMetaType.Type.Double)
+            QgsField('sequence', QVariant.Int),
+            QgsField('source_id', QVariant.String),
+            QgsField('seg_length', QVariant.Double)
         ])
         path_edges_layer.updateFields()
 
@@ -1343,9 +1343,9 @@ class mergingbanklines(QgsProcessingAlgorithm):
 
         final_path_provider = final_path_layer.dataProvider()
         final_path_provider.addAttributes([
-            QgsField('path_cost', QMetaType.Type.Double),
-            QgsField('node_count', QMetaType.Type.Int),
-            QgsField('edge_count', QMetaType.Type.Int)
+            QgsField('path_cost', QVariant.Double),
+            QgsField('node_count', QVariant.Int),
+            QgsField('edge_count', QVariant.Int)
         ])
         final_path_layer.updateFields()
 

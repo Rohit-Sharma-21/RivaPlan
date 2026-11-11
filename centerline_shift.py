@@ -11,7 +11,7 @@ import statistics
 import time
 from collections import Counter
 
-from qgis.PyQt.QtCore import QCoreApplication, QMetaType
+from qgis.PyQt.QtCore import QCoreApplication, QVariant
 from qgis.core import (
     QgsFeature, QgsFeatureSink, QgsField, QgsFields, QgsGeometry, QgsPointXY,
     QgsProcessing, QgsProcessingAlgorithm, QgsProcessingException,
@@ -470,14 +470,14 @@ class centerlineshifting(QgsProcessingAlgorithm):
                 counts[flag] += 1
 
         fields = QgsFields()
-        fields.append(QgsField('Chainage', QMetaType.Type.Double))
-        fields.append(QgsField('Shift', QMetaType.Type.Double))
-        fields.append(QgsField('Direction', QMetaType.Type.QString, len=20))
-        fields.append(QgsField('SignedShift', QMetaType.Type.Double))
-        fields.append(QgsField('QC_Status', QMetaType.Type.QString, len=20))
-        fields.append(QgsField('QC_Flags', QMetaType.Type.QString, len=120))
-        fields.append(QgsField('OldStep', QMetaType.Type.Double))
-        fields.append(QgsField('SearchLen', QMetaType.Type.Int))
+        fields.append(QgsField('Chainage', QVariant.Double))
+        fields.append(QgsField('Shift', QVariant.Double))
+        fields.append(QgsField('Direction', QVariant.String, len=20))
+        fields.append(QgsField('SignedShift', QVariant.Double))
+        fields.append(QgsField('QC_Status', QVariant.String, len=20))
+        fields.append(QgsField('QC_Flags', QVariant.String, len=120))
+        fields.append(QgsField('OldStep', QVariant.Double))
+        fields.append(QgsField('SearchLen', QVariant.Int))
         sink, output_id = self.parameterAsSink(
             parameters, self.OUTPUT, context, fields,
             QgsWkbTypes.LineString, working_crs)

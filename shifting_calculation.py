@@ -11,7 +11,7 @@ import statistics
 import time
 from collections import Counter
 
-from qgis.PyQt.QtCore import QCoreApplication, QMetaType
+from qgis.PyQt.QtCore import QCoreApplication, QVariant
 from qgis.core import (
     QgsCoordinateTransform, QgsFeature, QgsFeatureSink, QgsField, QgsFields,
     QgsGeometry, QgsPointXY, QgsProcessing, QgsProcessingAlgorithm,
@@ -546,21 +546,21 @@ class banklineshifting(QgsProcessingAlgorithm):
         tick = time.perf_counter()
         fields = QgsFields()
         for name, field_type in (
-            ('Chainage', QMetaType.Type.Double),
-            ('Shift', QMetaType.Type.Double),
-            ('Direction', QMetaType.Type.QString),
-            ('SignedShift', QMetaType.Type.Double),
-            ('BankChange', QMetaType.Type.Double),
-            ('BankStatus', QMetaType.Type.QString),
-            ('QC_Status', QMetaType.Type.QString),
-            ('QC_Flags', QMetaType.Type.QString),
-            ('SearchLen', QMetaType.Type.Int),
-            ('N_Old', QMetaType.Type.Int),
-            ('N_New', QMetaType.Type.Int),
-            ('BendDeg', QMetaType.Type.Double),
-            ('NeighMed', QMetaType.Type.Double),
-            ('OldStep', QMetaType.Type.Double),
-            ('NewStep', QMetaType.Type.Double),
+            ('Chainage', QVariant.Double),
+            ('Shift', QVariant.Double),
+            ('Direction', QVariant.String),
+            ('SignedShift', QVariant.Double),
+            ('BankChange', QVariant.Double),
+            ('BankStatus', QVariant.String),
+            ('QC_Status', QVariant.String),
+            ('QC_Flags', QVariant.String),
+            ('SearchLen', QVariant.Int),
+            ('N_Old', QVariant.Int),
+            ('N_New', QVariant.Int),
+            ('BendDeg', QVariant.Double),
+            ('NeighMed', QVariant.Double),
+            ('OldStep', QVariant.Double),
+            ('NewStep', QVariant.Double),
         ):
             fields.append(QgsField(name, field_type))
         sink, destination = self.parameterAsSink(
