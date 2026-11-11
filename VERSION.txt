@@ -1,0 +1,45 @@
+RivaPlan v2.1.0
+
+Release type: QGIS Processing plugin update
+Release year: 2026
+Status: Experimental; local testing completed, public v2.1.0 release pending
+
+Software name: RivaPlan
+QGIS plugin package identifier: Planform_Morphology
+Programming language: Python / PyQGIS
+Software environment tested: QGIS 3.40.13 (Windows)
+Minimum QGIS version declared in metadata: 3.28 (not yet independently verified for v2.1.0)
+
+Included processing scripts (7 tools):
+1. generate_centerline.py — Bank lines to centerline
+2. reverse_line_direction.py — Reverse Line Direction
+3. width.py — River Width
+4. centerline_shift.py — Centerline shifting
+5. shifting_calculation.py — Bankline Shifting
+6. sinuosity.py — Line sinuosity
+7. curvature.py — Local Curvature
+
+Major updates in v2.1.0:
+- Added the Reverse Line Direction tool for user-controlled reversal of input polylines.
+- Added adjustable bankline densification and enhanced geometry validation.
+- Updated width and migration transect search and intersection handling.
+- Added migration quality-control flags: SHARP_BEND, SHIFT_SPIKE, and IRREGULAR_PROGRESSION.
+- Standardized downstream-oriented direction guidance and bankline inward/outward displacement reporting.
+- Improved Processing help and diagnostic information.
+
+Verification status:
+- All seven tools loaded and were tested locally in QGIS.
+- 16 of 16 synthetic regression checks passed in the QGIS Python Console and a standalone QGIS Python environment on Windows.
+- The GitHub Actions Linux workflow has not yet been verified; no numerical code-coverage percentage is claimed.
+
+Repository:
+https://github.com/Rohit-Sharma-21/RivaPlan
+
+Official QGIS plugin listing (existing package identifier):
+https://plugins.qgis.org/plugins/Planform_Morphology/
+
+Earlier reviewer-access archive DOI (v0.2.0; not a DOI for v2.1.0):
+https://doi.org/10.5281/zenodo.20740988
+
+Release note:
+The v2.1.0 public plugin update is being prepared. Do not cite the older reviewer-access archive as the DOI of this version unless a matching archival release has been created.

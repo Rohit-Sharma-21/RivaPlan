@@ -8,6 +8,7 @@ from qgis.PyQt.QtGui import QIcon
 
 # Import algorithm classes from your script files
 from .centerline_shift import centerlineshifting
+from .reverse_line_direction import ReverseLineDirection
 from .curvature import LocalCurvatureSimple
 from .generate_centerline import mergingbanklines
 from .shifting_calculation import banklineshifting
@@ -25,6 +26,7 @@ class RivaPlanProvider(QgsProcessingProvider):
 
     def loadAlgorithms(self):
         self.addAlgorithm(mergingbanklines())
+        self.addAlgorithm(ReverseLineDirection())
         self.addAlgorithm(WidthOfRiver())
         self.addAlgorithm(banklineshifting())
         self.addAlgorithm(centerlineshifting())

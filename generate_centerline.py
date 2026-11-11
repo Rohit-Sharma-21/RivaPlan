@@ -4,9 +4,9 @@ Bank lines to centerline (QGIS Processing Algorithm)
 
 This tool creates a river centerline using left and right bank polylines.
 Method:
-1) Extract the four bank endpoints and create two end caps using the minimum-total-distance pairing.
+1) Extract four bank endpoints and choose the shortest geometrically valid cross-bank pairing.
 2) Merge the banks and end caps to create a closed river-channel polygon.
-3) Merge and densify the two bank lines at the original 5 m interval.
+3) Merge and densify the banklines at a user-selected interval (5 m default).
 4) Create Voronoi polygons from the bank vertices and convert them to Voronoi lines.
 5) Clip the Voronoi lines to the river-channel polygon before exploding and cleaning them.
 6) Create a dissolved exclusion buffer around both banks.
@@ -16,15 +16,17 @@ Method:
 10) Trace one continuous start-to-end route using Dijkstra's algorithm.
 
 Notes:
-- The 5 m bank densification interval is retained.
+- Densification defaults to 5 m and is adjustable.
 - Intermediate layers are handled as temporary QGIS outputs.
-- A fixed 0.50 map-unit bank-exclusion distance is used internally.
-- This script assumes banks are reasonably clean and in a projected CRS (meters/feet).
+- A fixed 0.50 metre bank-exclusion distance is used internally.
+- The working CRS must be projected with metre units; no region-specific CRS is assumed.
 """
 
 import heapq
+import time
+import math
 
-from qgis.PyQt.QtCore import QCoreApplication, QVariant
+from qgis.PyQt.QtCore import QCoreApplication, QMetaType
 from qgis.core import (QgsProcessing,
                        QgsFeature,
                        QgsField,
@@ -38,13 +40,43 @@ from qgis.core import (QgsProcessing,
                        QgsExpression,
                        QgsProcessingException,
                        QgsProcessingAlgorithm,
+    QgsProcessingParameterDefinition,
                        QgsProcessingParameterCrs,
                        QgsProcessingParameterFeatureSource,
                        QgsProcessingParameterVectorLayer,
                        QgsProcessingParameterFeatureSink,
                        QgsProcessingUtils,
-                       QgsProcessingMultiStepFeedback)
+                       QgsProcessingMultiStepFeedback,
+                       QgsProcessingFeedback,
+                       QgsProcessingParameterNumber,
+                       QgsUnitTypes)
 from qgis import processing
+
+
+class _QuietChildFeedback(QgsProcessingFeedback):
+    """Suppress verbose native child output while preserving cancellation/errors."""
+
+    def __init__(self, parent):
+        super().__init__()
+        self._parent = parent
+
+    def isCanceled(self):
+        return self._parent.isCanceled()
+
+    def pushInfo(self, info):
+        pass
+
+    def pushCommandInfo(self, info):
+        pass
+
+    def pushDebugInfo(self, info):
+        pass
+
+    def pushConsoleInfo(self, info):
+        pass
+
+    def reportError(self, error, fatalError=False):
+        self._parent.reportError(error, fatalError)
 
 
 class mergingbanklines(QgsProcessingAlgorithm):
@@ -52,6 +84,7 @@ class mergingbanklines(QgsProcessingAlgorithm):
     RIGHTBANK = 'RIGHTBANK'
     OUTPUT_CRS = 'CRS'
     OUTPUT = 'OUTPUT'
+    DENSIFY_INTERVAL = 'DENSIFY_INTERVAL'
 
     def tr(self, string):
         return QCoreApplication.translate('Processing', string)
@@ -72,7 +105,15 @@ class mergingbanklines(QgsProcessingAlgorithm):
         return ''
 
     def shortHelpString(self):
-        return self.tr("This tool makes the centerline for the given banks of the river")
+        return self.tr("""<h3>Bank lines to centerline</h3>
+<p>Generates a river centerline from the left and right banklines.</p>
+<h4>Parameters</h4><ul>
+<li><b>Left bank / Right bank:</b> Riverbank boundary lines.</li>
+</ul><h4>Advanced Parameters</h4><ul>
+<li><b>Working CRS:</b> Optional projected CRS in metres; defaults to the left bank CRS.</li>
+<li><b>Bankline densification interval:</b> Spacing used to densify banklines (m); default 5 m.</li>
+</ul><h4>Output</h4><p>Generated river centerline.</p>
+<p>For detailed documentation, see the <a href="https://github.com/Rohit-Sharma-21/RivaPlan">RivaPlan GitHub page</a>.</p>""")
 
     def initAlgorithm(self, config=None):
 
@@ -91,8 +132,15 @@ class mergingbanklines(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterCrs(
                 self.OUTPUT_CRS,
-                self.tr('CRS'),
-                defaultValue='EPSG:32644'))
+                self.tr('Working CRS (optional; defaults to left bank CRS)'),
+                defaultValue=None, optional=True))
+
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.DENSIFY_INTERVAL,
+                self.tr('Bankline densification interval (m)'),
+                type=QgsProcessingParameterNumber.Double,
+                defaultValue=5.0, minValue=0.001))
 
         self.addParameter(
             QgsProcessingParameterFeatureSink(
@@ -101,29 +149,113 @@ class mergingbanklines(QgsProcessingAlgorithm):
                 type=QgsProcessing.TypeVectorAnyGeometry,
                 createByDefault=True, supportsAppend=True, defaultValue=None))
 
+        # Optional settings appear under the collapsible Advanced Parameters section.
+        parameter = self.parameterDefinition(self.OUTPUT_CRS)
+        parameter.setFlags(parameter.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
+        parameter = self.parameterDefinition(self.DENSIFY_INTERVAL)
+        parameter.setFlags(parameter.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
+
     # ------------------------- Main algorithm -------------------------
     def processAlgorithm(self, parameters, context, feedback):
+        started_at = time.perf_counter()
         outputs = {}
         results = {}
 
-        # Fixed internal distance used to remove Voronoi segments
-        # close to either bank. The input CRS must use suitable map units.
-        bank_exclusion_distance = 0.50
+        bank_exclusion_distance = 0.50  # metres; unchanged algorithm constant
+        densify_interval = self.parameterAsDouble(
+            parameters, self.DENSIFY_INTERVAL, context)
+        if not math.isfinite(densify_interval) or densify_interval <= 0:
+            raise QgsProcessingException(
+                "Densification interval must be a positive number of metres.")
 
-        leftBankLayer = self.parameterAsVectorLayer(parameters, self.LEFTBANK, context)
-        rightBankLayer = self.parameterAsVectorLayer(parameters, self.RIGHTBANK, context)
-
+        leftBankLayer = self.parameterAsVectorLayer(
+            parameters, self.LEFTBANK, context)
+        rightBankLayer = self.parameterAsVectorLayer(
+            parameters, self.RIGHTBANK, context)
         if leftBankLayer is None or rightBankLayer is None:
-            raise QgsProcessingException("Invalid input: left and/or right bank layers are missing")
+            raise QgsProcessingException(
+                "Both left and right bank layers are required.")
 
-        output_crs = self.parameterAsCrs(
-            parameters, self.OUTPUT_CRS, context)
+        if not leftBankLayer.crs().isValid() or not rightBankLayer.crs().isValid():
+            raise QgsProcessingException(
+                "Both input bank layers must have a valid, defined CRS.")
+
+        explicit_crs = parameters.get(self.OUTPUT_CRS)
+        if explicit_crs is not None and str(explicit_crs).strip():
+            output_crs = self.parameterAsCrs(parameters, self.OUTPUT_CRS, context)
+        else:
+            output_crs = leftBankLayer.crs()
+
+        if not output_crs.isValid():
+            raise QgsProcessingException(
+                "Unable to establish a valid working CRS. Specify a projected CRS in metres.")
+        if output_crs.isGeographic() or output_crs.mapUnits() != QgsUnitTypes.DistanceMeters:
+            raise QgsProcessingException(
+                "RivaPlan requires a projected working CRS with metre units. "
+                "Select an appropriate local projected CRS (for example, the "
+                "appropriate UTM zone) instead of latitude/longitude or feet.")
 
         crs_authid = output_crs.authid()
         if not crs_authid:
-            crs_authid = leftBankLayer.crs().authid()
+            raise QgsProcessingException(
+                "Please select an identifiable projected working CRS with metre units.")
 
+        feedback.pushInfo('RivaPlan | Bank lines to centerline')
+        feedback.pushInfo('Working CRS: {} | Densification: {:.3f} m'.format(
+            output_crs.authid(), densify_interval))
         fb = QgsProcessingMultiStepFeedback(25, feedback)
+        child_fb = _QuietChildFeedback(fb)
+
+        # Reproject BEFORE endpoint extraction, distance comparisons and caps.
+        # The current implementation uses a single input feature per bank.
+        for side, bank in [('left', leftBankLayer), ('right', rightBankLayer)]:
+            if bank.featureCount() != 1:
+                raise QgsProcessingException(
+                    "The {} bank must contain exactly one continuous line feature "
+                    "(found {}). Merge or select the intended reach first.".format(
+                        side, bank.featureCount()))
+            feat = next(bank.getFeatures(), None)
+            if feat is None or not feat.hasGeometry() or feat.geometry().isEmpty():
+                raise QgsProcessingException("The {} bank has no usable geometry.".format(side))
+            geom = feat.geometry()
+            if geom.isMultipart():
+                parts = geom.asMultiPolyline()
+                if len(parts) != 1:
+                    raise QgsProcessingException(
+                        "The {} bank must be a single continuous LineString, not "
+                        "multiple disconnected parts.".format(side))
+            if geom.length() <= 0 or not geom.isGeosValid():
+                raise QgsProcessingException(
+                    "The {} bank is zero-length or geometrically invalid. "
+                    "Repair its geometry before running RivaPlan.".format(side))
+
+        if leftBankLayer.crs() != output_crs:
+            left_reproj = processing.run(
+                'native:reprojectlayer',
+                {'INPUT': leftBankLayer, 'TARGET_CRS': output_crs,
+                 'OUTPUT': QgsProcessing.TEMPORARY_OUTPUT},
+                context=context, feedback=child_fb, is_child_algorithm=True)
+            leftBankLayer = QgsProcessingUtils.mapLayerFromString(left_reproj['OUTPUT'], context)
+        if rightBankLayer.crs() != output_crs:
+            right_reproj = processing.run(
+                'native:reprojectlayer',
+                {'INPUT': rightBankLayer, 'TARGET_CRS': output_crs,
+                 'OUTPUT': QgsProcessing.TEMPORARY_OUTPUT},
+                context=context, feedback=child_fb, is_child_algorithm=True)
+            rightBankLayer = QgsProcessingUtils.mapLayerFromString(right_reproj['OUTPUT'], context)
+        if leftBankLayer is None or rightBankLayer is None:
+            raise QgsProcessingException('Could not prepare bank layers in the working CRS.')
+
+        left_geom = next(leftBankLayer.getFeatures()).geometry()
+        right_geom = next(rightBankLayer.getFeatures()).geometry()
+        if left_geom.isMultipart():
+            left_geom = QgsGeometry.fromPolylineXY(left_geom.asMultiPolyline()[0])
+        if right_geom.isMultipart():
+            right_geom = QgsGeometry.fromPolylineXY(right_geom.asMultiPolyline()[0])
+        if left_geom.intersects(right_geom):
+            raise QgsProcessingException(
+                'Left and right banklines intersect or overlap. '
+                'Prepare two distinct bank boundaries before centerline generation.')
 
         # Extract first and last vertices of both banks
         fb.setCurrentStep(0)
@@ -134,7 +266,7 @@ class mergingbanklines(QgsProcessingAlgorithm):
         }
         outputs['LeftEnds'] = processing.run(
             'native:extractspecificvertices', alg_params,
-            context=context, feedback=fb, is_child_algorithm=True)
+            context=context, feedback=child_fb, is_child_algorithm=True)
 
         fb.setCurrentStep(1)
         alg_params = {
@@ -144,7 +276,7 @@ class mergingbanklines(QgsProcessingAlgorithm):
         }
         outputs['RightEnds'] = processing.run(
             'native:extractspecificvertices', alg_params,
-            context=context, feedback=fb, is_child_algorithm=True)
+            context=context, feedback=child_fb, is_child_algorithm=True)
 
         left_end_layer = QgsProcessingUtils.mapLayerFromString(
             outputs['LeftEnds']['OUTPUT'], context)
@@ -179,26 +311,85 @@ class mergingbanklines(QgsProcessingAlgorithm):
             for feature in right_end_features
         ]
 
-        # Compare the two valid one-to-one endpoint pairings
-        pairing_a = (
-            left_points[0].distance(right_points[0])
-            + left_points[1].distance(right_points[1])
-        )
-        pairing_b = (
-            left_points[0].distance(right_points[1])
-            + left_points[1].distance(right_points[0])
-        )
+        # Both banks are already known edges (AB and CD), so only two
+        # complete cross-bank matchings are possible: AC+BD or AD+BC.
+        # Check BOTH before selecting the shortest geometrically valid one.
+        candidates = [
+            ((0, 0), (1, 1)),
+            ((0, 1), (1, 0)),
+        ]
+        left_vertices = left_geom.asPolyline()
+        right_vertices = right_geom.asPolyline()
+        valid_pairings = []
+        pairing_rejections = []
 
-        if pairing_a <= pairing_b:
-            cap_pairs = [
-                (left_points[0], right_points[0]),
-                (left_points[1], right_points[1])
-            ]
-        else:
-            cap_pairs = [
-                (left_points[0], right_points[1]),
-                (left_points[1], right_points[0])
-            ]
+        def only_expected_endpoint_contact(cap, bank_geom, endpoint):
+            if not cap.intersects(bank_geom):
+                return False
+            contact = cap.intersection(bank_geom)
+            if contact.isEmpty() or contact.type() != QgsWkbTypes.PointGeometry:
+                return False  # overlap or shared segment is not an end cap
+            if contact.isMultipart():
+                contact_points = contact.asMultiPoint()
+            else:
+                contact_points = [contact.asPoint()]
+            return (len(contact_points) == 1 and
+                    QgsPointXY(contact_points[0]).distance(endpoint) <= 0.001)
+
+        for matching in candidates:
+            cap_geoms = [QgsGeometry.fromPolylineXY(
+                [left_points[li], right_points[ri]]) for li, ri in matching]
+            label = '{} + {}'.format(
+                'AC' if matching[0] == (0, 0) else 'AD',
+                'BD' if matching[1] == (1, 1) else 'BC')
+            if any(cap.length() <= 0 for cap in cap_geoms):
+                pairing_rejections.append('{}: zero-length cap'.format(label))
+                continue
+            if cap_geoms[0].intersects(cap_geoms[1]):
+                pairing_rejections.append('{}: intersecting caps'.format(label))
+                continue
+            contacts_ok = all(
+                only_expected_endpoint_contact(cap_geoms[i], left_geom,
+                                               left_points[li]) and
+                only_expected_endpoint_contact(cap_geoms[i], right_geom,
+                                               right_points[ri])
+                for i, (li, ri) in enumerate(matching))
+            if not contacts_ok:
+                pairing_rejections.append(
+                    '{}: cap intersects bankline away from its endpoint'.format(label))
+                continue
+
+            # Construct the single expected ring explicitly. This prevents
+            # a wrong pairing from passing just because polygonize retains
+            # some smaller internal polygon.
+            right_at_left_end = matching[1][1]
+            traversed_right = (list(reversed(right_vertices))
+                               if right_at_left_end == 1 else list(right_vertices))
+            ring = [QgsPointXY(p) for p in left_vertices]
+            ring.extend(QgsPointXY(p) for p in traversed_right)
+            ring.append(QgsPointXY(left_vertices[0]))
+            polygon = QgsGeometry.fromPolygonXY([ring])
+            if polygon.isEmpty() or not polygon.isGeosValid() or polygon.area() <= 0:
+                pairing_rejections.append('{}: invalid channel polygon'.format(label))
+                continue
+            total_length = sum(cap.length() for cap in cap_geoms)
+            valid_pairings.append((total_length, matching, label))
+
+        if not valid_pairings:
+            raise QgsProcessingException(
+                'Neither cross-bank end-cap pairing gives a valid channel '
+                'polygon. Check endpoints, bankline geometry and reach limits. '
+                'Details: {}'.format('; '.join(pairing_rejections)))
+        valid_pairings.sort(key=lambda item: item[0])
+        _, selected_matching, selected_label = valid_pairings[0]
+        if len(valid_pairings) > 1:
+            feedback.pushWarning(
+                'Both end-cap pairings are geometrically valid. '
+                'Selected shorter {}. Inspect the closures for this folded reach.'.format(
+                    selected_label))
+        cap_pairs = [(left_points[li], right_points[ri])
+                     for li, ri in selected_matching]
+        feedback.pushInfo('End-cap pairing done')
 
         # Create and save the two river end caps
         fb.setCurrentStep(2)
@@ -211,8 +402,8 @@ class mergingbanklines(QgsProcessingAlgorithm):
 
         end_cap_provider = end_cap_layer.dataProvider()
         end_cap_provider.addAttributes([
-            QgsField('cap_id', QVariant.Int),
-            QgsField('cap_len', QVariant.Double)
+            QgsField('cap_id', QMetaType.Type.Int),
+            QgsField('cap_len', QMetaType.Type.Double)
         ])
         end_cap_layer.updateFields()
 
@@ -234,7 +425,7 @@ class mergingbanklines(QgsProcessingAlgorithm):
                 'INPUT': end_cap_layer,
                 'OUTPUT': QgsProcessing.TEMPORARY_OUTPUT
             },
-            context=context, feedback=fb, is_child_algorithm=True)
+            context=context, feedback=child_fb, is_child_algorithm=True)
 
         outputs['ClosureLines'] = outputs['EndCaps']
 
@@ -263,8 +454,8 @@ class mergingbanklines(QgsProcessingAlgorithm):
         )
 
         channel_boundary_provider.addAttributes([
-            QgsField('boundary_id', QVariant.Int),
-            QgsField('source', QVariant.String)
+            QgsField('boundary_id', QMetaType.Type.Int),
+            QgsField('source', QMetaType.Type.QString)
         ])
         channel_boundary_layer.updateFields()
 
@@ -360,7 +551,7 @@ class mergingbanklines(QgsProcessingAlgorithm):
                 'OUTPUT': QgsProcessing.TEMPORARY_OUTPUT
             },
             context=context,
-            feedback=fb,
+            feedback=child_fb,
             is_child_algorithm=True
         )
 
@@ -373,7 +564,7 @@ class mergingbanklines(QgsProcessingAlgorithm):
         }
         outputs['RiverChannelPolygonRaw'] = processing.run(
             'native:polygonize', alg_params,
-            context=context, feedback=fb, is_child_algorithm=True)
+            context=context, feedback=child_fb, is_child_algorithm=True)
 
         raw_polygon_layer = QgsProcessingUtils.mapLayerFromString(
             outputs['RiverChannelPolygonRaw']['OUTPUT'], context)
@@ -391,28 +582,30 @@ class mergingbanklines(QgsProcessingAlgorithm):
         }
         outputs['RiverChannelPolygon'] = processing.run(
             'native:extractbyexpression', alg_params,
-            context=context, feedback=fb, is_child_algorithm=True)
+            context=context, feedback=child_fb, is_child_algorithm=True)
 
-        # Original bank merge and 5 m densification
+        # Bank merge and adjustable densification
+        preprocess_time = time.perf_counter() - started_at
+        voronoi_started = time.perf_counter()
         fb.setCurrentStep(6)
         alg_params = {
             'LAYERS': [leftBankLayer, rightBankLayer],
-            'CRS': parameters[self.OUTPUT_CRS],
+            'CRS': output_crs,
             'OUTPUT': QgsProcessing.TEMPORARY_OUTPUT
         }
         outputs['MergeVectorLayers'] = processing.run(
             'native:mergevectorlayers', alg_params,
-            context=context, feedback=fb, is_child_algorithm=True)
+            context=context, feedback=child_fb, is_child_algorithm=True)
 
         fb.setCurrentStep(7)
         alg_params = {
             'INPUT': outputs['MergeVectorLayers']['OUTPUT'],
-            'INTERVAL': 5,
+            'INTERVAL': densify_interval,
             'OUTPUT': QgsProcessing.TEMPORARY_OUTPUT
         }
         outputs['DensifyByInterval'] = processing.run(
             'native:densifygeometriesgivenaninterval', alg_params,
-            context=context, feedback=fb, is_child_algorithm=True)
+            context=context, feedback=child_fb, is_child_algorithm=True)
 
         fb.setCurrentStep(8)
         alg_params = {
@@ -421,7 +614,7 @@ class mergingbanklines(QgsProcessingAlgorithm):
         }
         outputs['ExtractVertices_01'] = processing.run(
             'native:extractvertices', alg_params,
-            context=context, feedback=fb, is_child_algorithm=True)
+            context=context, feedback=child_fb, is_child_algorithm=True)
 
         fb.setCurrentStep(9)
         alg_params = {
@@ -431,7 +624,7 @@ class mergingbanklines(QgsProcessingAlgorithm):
         }
         outputs['VoronoiPolygons'] = processing.run(
             'qgis:voronoipolygons', alg_params,
-            context=context, feedback=fb, is_child_algorithm=True)
+            context=context, feedback=child_fb, is_child_algorithm=True)
 
         fb.setCurrentStep(10)
         alg_params = {
@@ -440,7 +633,21 @@ class mergingbanklines(QgsProcessingAlgorithm):
         }
         outputs['PolygonsToLines'] = processing.run(
             'native:polygonstolines', alg_params,
-            context=context, feedback=fb, is_child_algorithm=True)
+            context=context, feedback=child_fb, is_child_algorithm=True)
+
+        # Index the large Voronoi line input and polygon overlay BEFORE
+        # native:clip; the original algorithm indexed only after clipping.
+        try:
+            processing.run('native:createspatialindex',
+                           {'INPUT': outputs['PolygonsToLines']['OUTPUT']},
+                           context=context, feedback=child_fb,
+                           is_child_algorithm=True)
+            processing.run('native:createspatialindex',
+                           {'INPUT': outputs['RiverChannelPolygon']['OUTPUT']},
+                           context=context, feedback=child_fb,
+                           is_child_algorithm=True)
+        except QgsProcessingException as exc:
+            fb.pushWarning('Spatial index creation unavailable: {}'.format(exc))
 
         # Clip before exploding and cleaning the Voronoi linework
         fb.setCurrentStep(11)
@@ -451,7 +658,7 @@ class mergingbanklines(QgsProcessingAlgorithm):
         }
         outputs['ClippedVoronoiLines'] = processing.run(
             'native:clip', alg_params,
-            context=context, feedback=fb, is_child_algorithm=True)
+            context=context, feedback=child_fb, is_child_algorithm=True)
 
         fb.setCurrentStep(12)
         alg_params = {
@@ -460,7 +667,7 @@ class mergingbanklines(QgsProcessingAlgorithm):
         }
         outputs['ExplodeLines'] = processing.run(
             'native:explodelines', alg_params,
-            context=context, feedback=fb, is_child_algorithm=True)
+            context=context, feedback=child_fb, is_child_algorithm=True)
 
         fb.setCurrentStep(13)
         alg_params = {
@@ -471,7 +678,7 @@ class mergingbanklines(QgsProcessingAlgorithm):
         }
         outputs['RemoveDuplicateVertices'] = processing.run(
             'native:removeduplicatevertices', alg_params,
-            context=context, feedback=fb, is_child_algorithm=True)
+            context=context, feedback=child_fb, is_child_algorithm=True)
 
         fb.setCurrentStep(14)
         alg_params = {
@@ -480,7 +687,7 @@ class mergingbanklines(QgsProcessingAlgorithm):
         }
         outputs['DeleteDuplicateGeometriesVoronoiPolylines'] = processing.run(
             'native:deleteduplicategeometries', alg_params,
-            context=context, feedback=fb, is_child_algorithm=True)
+            context=context, feedback=child_fb, is_child_algorithm=True)
 
         fb.setCurrentStep(15)
         alg_params = {
@@ -489,7 +696,7 @@ class mergingbanklines(QgsProcessingAlgorithm):
         }
         outputs['CreateSpatialIndex_01'] = processing.run(
             'native:createspatialindex', alg_params,
-            context=context, feedback=fb, is_child_algorithm=True)
+            context=context, feedback=child_fb, is_child_algorithm=True)
 
         # --------------------------------------------------------------
         # Create one dissolved exclusion buffer around both bank lines.
@@ -514,7 +721,7 @@ class mergingbanklines(QgsProcessingAlgorithm):
             'native:buffer',
             alg_params,
             context=context,
-            feedback=fb,
+            feedback=child_fb,
             is_child_algorithm=True
         )
 
@@ -531,7 +738,7 @@ class mergingbanklines(QgsProcessingAlgorithm):
             'native:extractbylocation',
             alg_params,
             context=context,
-            feedback=fb,
+            feedback=child_fb,
             is_child_algorithm=True
         )
 
@@ -549,13 +756,15 @@ class mergingbanklines(QgsProcessingAlgorithm):
             'native:extractbylocation',
             alg_params,
             context=context,
-            feedback=fb,
+            feedback=child_fb,
             is_child_algorithm=True
         )
 
         # ------------------------------------------------------------------
         # DIRECT DIJKSTRA TRACING ON THE STEP 18 VORONOI NETWORK
         # ------------------------------------------------------------------
+        voronoi_time = time.perf_counter() - voronoi_started
+        dijkstra_started = time.perf_counter()
         closure_layer = QgsProcessingUtils.mapLayerFromString(
             outputs['EndCaps']['OUTPUT'],
             context
@@ -704,7 +913,6 @@ class mergingbanklines(QgsProcessingAlgorithm):
         # --------------------------------------------------------------
         def graph_node_ranking(target_point):
             ranking = []
-
             for key, graph_point in node_coordinates.items():
                 dx = graph_point.x() - target_point.x()
                 dy = graph_point.y() - target_point.y()
@@ -800,8 +1008,8 @@ class mergingbanklines(QgsProcessingAlgorithm):
 
         midpoint_provider = midpoint_layer.dataProvider()
         midpoint_provider.addAttributes([
-            QgsField('role', QVariant.String),
-            QgsField('closure_id', QVariant.String)
+            QgsField('role', QMetaType.Type.QString),
+            QgsField('closure_id', QMetaType.Type.QString)
         ])
         midpoint_layer.updateFields()
 
@@ -826,7 +1034,7 @@ class mergingbanklines(QgsProcessingAlgorithm):
                 'OUTPUT': QgsProcessing.TEMPORARY_OUTPUT
             },
             context=context,
-            feedback=fb,
+            feedback=child_fb,
             is_child_algorithm=True
         )
 
@@ -847,11 +1055,11 @@ class mergingbanklines(QgsProcessingAlgorithm):
 
         anchor_provider = anchor_layer.dataProvider()
         anchor_provider.addAttributes([
-            QgsField('role', QVariant.String),
-            QgsField('closure_id', QVariant.String),
-            QgsField('snap_dist', QVariant.Double),
-            QgsField('node_x', QVariant.Double),
-            QgsField('node_y', QVariant.Double)
+            QgsField('role', QMetaType.Type.QString),
+            QgsField('closure_id', QMetaType.Type.QString),
+            QgsField('snap_dist', QMetaType.Type.Double),
+            QgsField('node_x', QMetaType.Type.Double),
+            QgsField('node_y', QMetaType.Type.Double)
         ])
         anchor_layer.updateFields()
 
@@ -879,7 +1087,7 @@ class mergingbanklines(QgsProcessingAlgorithm):
                 'OUTPUT': QgsProcessing.TEMPORARY_OUTPUT
             },
             context=context,
-            feedback=fb,
+            feedback=child_fb,
             is_child_algorithm=True
         )
 
@@ -982,9 +1190,9 @@ class mergingbanklines(QgsProcessingAlgorithm):
 
         path_edges_provider = path_edges_layer.dataProvider()
         path_edges_provider.addAttributes([
-            QgsField('sequence', QVariant.Int),
-            QgsField('source_id', QVariant.String),
-            QgsField('seg_length', QVariant.Double)
+            QgsField('sequence', QMetaType.Type.Int),
+            QgsField('source_id', QMetaType.Type.QString),
+            QgsField('seg_length', QMetaType.Type.Double)
         ])
         path_edges_layer.updateFields()
 
@@ -1021,7 +1229,7 @@ class mergingbanklines(QgsProcessingAlgorithm):
                 'OUTPUT': QgsProcessing.TEMPORARY_OUTPUT
             },
             context=context,
-            feedback=fb,
+            feedback=child_fb,
             is_child_algorithm=True
         )
 
@@ -1059,6 +1267,70 @@ class mergingbanklines(QgsProcessingAlgorithm):
             raise QgsProcessingException(
                 "The final Dijkstra centreline geometry is empty.")
 
+        # Final geometry checks (diagnostic only; do not modify the result).
+        feedback.pushInfo('--- Final centerline geometry checks ---')
+
+        # Check whether any part of the centerline lies outside the selected
+        # river-channel polygon. A line on the polygon boundary is allowed.
+        try:
+            channel_layer = QgsProcessingUtils.mapLayerFromString(
+                outputs['RiverChannelPolygon']['OUTPUT'], context)
+            if channel_layer is None:
+                feedback.pushWarning(
+                    'Centerline within channel polygon: NOT CHECKED '
+                    '(channel polygon layer could not be loaded).')
+            else:
+                channel_geometries = [
+                    QgsGeometry(feature.geometry())
+                    for feature in channel_layer.getFeatures()
+                    if feature.hasGeometry() and not feature.geometry().isEmpty()
+                ]
+                if not channel_geometries:
+                    feedback.pushWarning(
+                        'Centerline within channel polygon: NOT CHECKED '
+                        '(no usable channel polygon geometry).')
+                else:
+                    channel_geometry = QgsGeometry.unaryUnion(channel_geometries)
+                    outside_geometry = final_path_geometry.difference(
+                        channel_geometry)
+                    if outside_geometry.isNull():
+                        feedback.pushWarning(
+                            'Centerline within channel polygon: NOT CHECKED '
+                            '(geometry difference could not be calculated).')
+                    elif outside_geometry.isEmpty() or outside_geometry.length() <= 1e-6:
+                        feedback.pushInfo(
+                            'Centerline within channel polygon: PASS '
+                            '(no portion outside the polygon).')
+                    else:
+                        feedback.pushWarning(
+                            'Centerline within channel polygon: WARNING '
+                            '({:.3f} m of centerline lies outside the polygon).'.format(
+                                outside_geometry.length()))
+        except Exception as exc:
+            feedback.pushWarning(
+                'Centerline within channel polygon: NOT CHECKED ({})'.format(exc))
+
+        # Check actual line crossings, not simple touches, with either bank.
+        try:
+            crosses_left = final_path_geometry.crosses(left_geom)
+            crosses_right = final_path_geometry.crosses(right_geom)
+            if crosses_left or crosses_right:
+                crossing_banks = []
+                if crosses_left:
+                    crossing_banks.append('left')
+                if crosses_right:
+                    crossing_banks.append('right')
+                feedback.pushWarning(
+                    'Centerline crosses bankline: WARNING '
+                    '(crosses {} bankline).'.format(' and '.join(crossing_banks)))
+            else:
+                feedback.pushInfo(
+                    'Centerline crosses bankline: PASS '
+                    '(no crossings detected).')
+        except Exception as exc:
+            feedback.pushWarning(
+                'Centerline crosses bankline: NOT CHECKED ({})'.format(exc))
+
         final_path_layer = QgsVectorLayer(
             f'LineString?crs={crs_authid}',
             'DijkstraCenterline',
@@ -1071,9 +1343,9 @@ class mergingbanklines(QgsProcessingAlgorithm):
 
         final_path_provider = final_path_layer.dataProvider()
         final_path_provider.addAttributes([
-            QgsField('path_cost', QVariant.Double),
-            QgsField('node_count', QVariant.Int),
-            QgsField('edge_count', QVariant.Int)
+            QgsField('path_cost', QMetaType.Type.Double),
+            QgsField('node_count', QMetaType.Type.Int),
+            QgsField('edge_count', QMetaType.Type.Int)
         ])
         final_path_layer.updateFields()
 
@@ -1093,7 +1365,7 @@ class mergingbanklines(QgsProcessingAlgorithm):
                 'OUTPUT': QgsProcessing.TEMPORARY_OUTPUT
             },
             context=context,
-            feedback=fb,
+            feedback=child_fb,
             is_child_algorithm=True
         )
 
@@ -1113,7 +1385,7 @@ class mergingbanklines(QgsProcessingAlgorithm):
         outputs['AddAutoincrementalField'] = processing.run(
             'native:addautoincrementalfield',
             alg_params, context=context,
-            feedback=fb, is_child_algorithm=True)
+            feedback=child_fb, is_child_algorithm=True)
 
         # Retain fields
         fb.setCurrentStep(24)
@@ -1124,7 +1396,7 @@ class mergingbanklines(QgsProcessingAlgorithm):
         }
         outputs['RetainFields'] = processing.run(
             'native:retainfields', alg_params,
-            context=context, feedback=fb,
+            context=context, feedback=child_fb,
             is_child_algorithm=True)
 
         results['Centerline'] = outputs['RetainFields']['OUTPUT']
@@ -1132,5 +1404,16 @@ class mergingbanklines(QgsProcessingAlgorithm):
         layer_id = results['Centerline']
         layer_details = context.layerToLoadOnCompletionDetails(layer_id)
         layer_details.name = "centerline"
-        # results[self.OUTPUT] = outputs['RetainFields']['OUTPUT']
+        # Timings are printed once, avoiding dozens of native child logs.
+        dijkstra_time = time.perf_counter() - dijkstra_started
+        total_time = time.perf_counter() - started_at
+        other_time = max(0.0, total_time - preprocess_time - voronoi_time - dijkstra_time)
+        feedback.pushInfo('--- RivaPlan centerline processing ---')
+        feedback.pushInfo('1. Input preprocessing and polygon construction: {:.3f} s'.format(preprocess_time))
+        feedback.pushInfo('2. Voronoi generation and filtering: {:.3f} s'.format(voronoi_time))
+        feedback.pushInfo('3. Dijkstra graph construction and route extraction: {:.3f} s'.format(dijkstra_time))
+        feedback.pushInfo('Total centerline generation: {:.3f} s'.format(total_time))
+        if other_time > 0.01:
+            feedback.pushInfo('Other overhead: {:.3f} s'.format(other_time))
+        feedback.pushInfo('Centerline generation completed successfully.')
         return results

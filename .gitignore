@@ -216,3 +216,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Python and testing files
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/

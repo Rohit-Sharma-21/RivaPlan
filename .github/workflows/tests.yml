@@ -1,0 +1,35 @@
+name: RivaPlan regression tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  qgis-regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install QGIS Python and Processing dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            python3-qgis qgis-providers python3-pyqt5 python3-gdal xvfb
+
+      - name: Display QGIS and Python versions
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          /usr/bin/python3 -c "from qgis.core import Qgis; print('QGIS:', Qgis.QGIS_VERSION)"
+          /usr/bin/python3 --version
+
+      - name: Run all 16 RivaPlan regression checks
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          xvfb-run -a /usr/bin/python3 tests/run_standalone.py
