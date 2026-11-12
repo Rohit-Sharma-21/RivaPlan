@@ -85,6 +85,7 @@ class mergingbanklines(QgsProcessingAlgorithm):
     OUTPUT_CRS = 'CRS'
     OUTPUT = 'OUTPUT'
     DENSIFY_INTERVAL = 'DENSIFY_INTERVAL'
+    BANK_EXCLUSION_DISTANCE = 'BANK_EXCLUSION_DISTANCE'
 
     def tr(self, string):
         return QCoreApplication.translate('Processing', string)
@@ -112,6 +113,7 @@ class mergingbanklines(QgsProcessingAlgorithm):
 </ul><h4>Advanced Parameters</h4><ul>
 <li><b>Working CRS:</b> Optional projected CRS in metres; defaults to the left bank CRS.</li>
 <li><b>Bankline densification interval:</b> Spacing used to densify banklines (m); default 5 m.</li>
+<li><b>Bank-exclusion buffer distance:</b> Buffer around both banklines used to exclude nearby Voronoi segments (m); default 0.50 m. Smaller values may help preserve connections in narrow channels.</li>
 </ul><h4>Output</h4><p>Generated river centerline.</p>
 <p>For detailed documentation, see the <a href="https://github.com/Rohit-Sharma-21/RivaPlan">RivaPlan GitHub page</a>.</p>""")
 
@@ -143,6 +145,13 @@ class mergingbanklines(QgsProcessingAlgorithm):
                 defaultValue=5.0, minValue=0.001))
 
         self.addParameter(
+            QgsProcessingParameterNumber(
+                self.BANK_EXCLUSION_DISTANCE,
+                self.tr('Bank-exclusion buffer distance (m)'),
+                type=QgsProcessingParameterNumber.Double,
+                defaultValue=0.50, minValue=0.001))
+
+        self.addParameter(
             QgsProcessingParameterFeatureSink(
                 'Centerline',  # self.OUTPUT
                 self.tr('Centerline'),
@@ -154,6 +163,8 @@ class mergingbanklines(QgsProcessingAlgorithm):
         parameter.setFlags(parameter.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
         parameter = self.parameterDefinition(self.DENSIFY_INTERVAL)
         parameter.setFlags(parameter.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
+        parameter = self.parameterDefinition(self.BANK_EXCLUSION_DISTANCE)
+        parameter.setFlags(parameter.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
 
     # ------------------------- Main algorithm -------------------------
     def processAlgorithm(self, parameters, context, feedback):
@@ -161,7 +172,11 @@ class mergingbanklines(QgsProcessingAlgorithm):
         outputs = {}
         results = {}
 
-        bank_exclusion_distance = 0.50  # metres; unchanged algorithm constant
+        bank_exclusion_distance = self.parameterAsDouble(
+            parameters, self.BANK_EXCLUSION_DISTANCE, context)
+        if not math.isfinite(bank_exclusion_distance) or bank_exclusion_distance <= 0:
+            raise QgsProcessingException(
+                'Bank-exclusion buffer distance must be a positive number of metres.')
         densify_interval = self.parameterAsDouble(
             parameters, self.DENSIFY_INTERVAL, context)
         if not math.isfinite(densify_interval) or densify_interval <= 0:
@@ -203,6 +218,8 @@ class mergingbanklines(QgsProcessingAlgorithm):
         feedback.pushInfo('RivaPlan | Bank lines to centerline')
         feedback.pushInfo('Working CRS: {} | Densification: {:.3f} m'.format(
             output_crs.authid(), densify_interval))
+        feedback.pushInfo('Bank-exclusion buffer distance: {:.3f} m'.format(
+            bank_exclusion_distance))
         fb = QgsProcessingMultiStepFeedback(25, feedback)
         child_fb = _QuietChildFeedback(fb)
 
@@ -702,7 +719,7 @@ class mergingbanklines(QgsProcessingAlgorithm):
         # Create one dissolved exclusion buffer around both bank lines.
         #
         # The buffer includes exact bank intersections and all geometry
-        # within the fixed internal bank-exclusion distance. DISSOLVE=True is essential:
+        # within the user-selected bank-exclusion distance. DISSOLVE=True is essential:
         # it produces a single multipart reference feature, so the
         # "disjoint" predicate means disjoint from both banks together.
         # --------------------------------------------------------------

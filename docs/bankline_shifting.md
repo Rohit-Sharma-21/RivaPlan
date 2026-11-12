@@ -24,9 +24,11 @@ In QGIS, open:
 | **Old Bank Line** | Bankline representing the earlier time period. |
 | **Working CRS (projected)** | Projected coordinate reference system used for distance calculations. |
 | **Select the Bank** | Specifies whether the analysis represents the Left Bank or Right Bank. |
-| **Bankline Shifting** | Output point layer containing bankline-shifting measurements. |
+| **Transect search method** | Automatic full input-extent diagonal on each side, or manual search. |
+| **Manual search distance on EACH side (m)** | Search limit (default 500 m) when manual mode is selected. |
+| **Bankline Shifting** | Output **line** layer containing old-to-new bank displacement measurements. |
 
-A projected CRS with metric units is recommended.
+A projected working CRS in **metres is required**.
 
 ---
 
@@ -69,10 +71,10 @@ Bankline shifting is calculated through the following workflow:
 
 ## Output
 
-The final output is a point layer containing bankline-shifting measurements at the chainage locations.
+The final output is a **line layer** containing old-to-new bankline displacement segments associated with reference-centerline chainage locations.
 
 <p align="center">
-  <img src="images/bankline_shifting_output.png" alt="Bankline shifting output generated using RivaPlan" width="900">
+  <img src="images/bankline_shifting_outputs.PNG" alt="Bankline shifting output generated using RivaPlan" width="900">
 </p>
 
 Important output attributes include:
@@ -83,13 +85,17 @@ Important output attributes include:
 | **angle** | Local orientation associated with the centerline chainage location. |
 | **Shift** | Magnitude of lateral displacement between the old and new banklines. |
 | **Direction** | Direction of movement: Left, Right, or No Shift. |
-| **SignedShift** | Directional shifting value. Left shifts are negative and right shifts are positive. |
+| **SignedShift** | Old-to-new displacement: negative downstream-left, positive downstream-right, assuming downstream-oriented reference centerline. |
+| **BankChange** | Signed bank adjustment: negative outward from channel interior, positive inward. |
+| **BankStatus** | `OUTWARD`, `INWARD` or `NO_CHANGE` geometric adjustment. |
+| **QC_Status** | Measurement status, e.g. `VALID`, `REVIEW`, `NO_INTERSECTION`, `INVALID_PAIR`. |
+| **QC_Flags** | Review flags for sharp bends, spikes, or irregular old/new intersection progression. |
 
 ---
 
 ## Selecting Left or Right Bank
 
-The **Select the Bank** parameter is important because the geometric interpretation of leftward and rightward movement depends on which bank is being analysed.
+**Select the bank** distinguishes inward from outward adjustments on the chosen bank. SignedShift is always downstream-left negative/downstream-right positive, while BankChange uses the channel interior as its reference.
 
 Available options are:
 
@@ -131,3 +137,16 @@ For reliable bankline-shifting analysis:
 Where multiple bankline intersections occur along a transect, RivaPlan retains the intersection nearest to the corresponding centerline chainage point.
 
 Intermediate layers are temporary and only the final bankline-shifting layer is returned as the primary output.
+
+## Advanced parameters and QC interpretation
+
+| Setting | Default | Meaning |
+|---|---:|---|
+| Sharp-bend threshold | 10° | Flags abrupt local reference-centerline changes (`SHARP_BEND`). |
+| Shift-spike multiplier | 2.0 | Flags shifts unusually large relative to neighbouring measurements (`SHIFT_SPIKE`). |
+| Bankline progression lower factor | 0.5 | Lower allowable along-bank progression relative to chainage spacing. |
+| Bankline progression upper factor | 1.5 | Upper allowable along-bank progression. |
+
+The longitudinal checks can produce `IRREGULAR_PROGRESSION_OLD` and `IRREGULAR_PROGRESSION_NEW`. If a bankline cannot be assembled for progression analysis, `IRREGULAR_PROGRESSION_UNAVAILABLE` may be recorded. QC flags are **diagnostic**, not evidence of incorrect measurements. Inspect the geometry and input bank dates before drawing conclusions. `OUTWARD` and `INWARD` describe geometric movement, **not direct proof of erosion or deposition**.
+
+[Return to tool documentation](README.md)

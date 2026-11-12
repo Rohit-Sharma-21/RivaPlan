@@ -26,7 +26,7 @@ In QGIS, open:
 | **INPUT (river centerline)** | River centerline used for curvature analysis. |
 | **DIST_M (sampling interval, meters)** | Distance between consecutive sampling points. The default value is 50 m. |
 | **MODE** | Selects the angle-gradient method, three-point circumcircle method, or both methods. |
-| **WORKING_CRS (projected, meters)** | Projected coordinate reference system used for geometric calculations. |
+| **WORKING_CRS (advanced)** | Optional; defaults to input CRS. Must be projected with metre units. |
 | **OUTPUT (Curvature points)** | Output point layer containing local curvature measurements. |
 
 ---
@@ -34,7 +34,7 @@ In QGIS, open:
 ## Tool Interface
 
 <p align="center">
-  <img src="images/local_curvature_tool.png" alt="RivaPlan Local Curvature tool" width="900">
+  <img src="images/local_curvature_options.png" alt="RivaPlan Local Curvature tool" width="900">
 </p>
 
 ---
@@ -88,7 +88,7 @@ This allows the two curvature approaches to be compared directly within one outp
 The output is a point layer containing curvature measurements along the river centerline.
 
 <p align="center">
-  <img src="images/local_curvature_output.png" alt="Local curvature output generated using RivaPlan" width="900">
+  <img src="images/curvature_outputs.PNG" alt="Local curvature output generated using RivaPlan" width="900">
 </p>
 
 All modes contain the following basic attributes:
@@ -185,3 +185,12 @@ The three available processing modes are:
 - **Both (compute both methods)**
 
 Intermediate calculations are temporary and the final curvature-point layer is returned as the primary output.
+
+## Advanced setting, signs and limitations
+
+- **Working CRS:** defaults to the input centerline CRS if omitted; a projected metre CRS is required.
+- Curvature is signed relative to the **digitized line orientation**. For downstream-oriented lines, positive/negative values represent opposite bend sides; reversing the centerline reverses the sign.
+- The angle-gradient and three-point estimates are different numerical approximations. Their agreement depends on the sampling interval, bend geometry and geometry quality.
+- Straight or nearly collinear triplets may yield zero curvature and very large or undefined radius values; inspect exceptional values and avoid directly interpreting numerical singularities as physical river changes.
+
+[Return to tool documentation](README.md)

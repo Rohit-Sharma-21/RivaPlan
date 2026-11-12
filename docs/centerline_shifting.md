@@ -21,7 +21,9 @@ In QGIS, open:
 | **Chainage Interval** | Distance between consecutive measurement locations. The default value is 100 m. |
 | **New Centerline** | Centerline representing the more recent time period. |
 | **Old Centerline** | Centerline representing the earlier time period. |
-| **Working CRS (projected)** | Projected coordinate reference system used for distance calculations. |
+| **Working CRS (advanced)** | Optional projected CRS in metres; defaults to newer centerline CRS. |
+| **Transect search method** | Automatic full extent diagonal on each side, or manual. |
+| **Manual search distance on EACH side (m)** | Optional search limit; default 500 m if manual mode is selected. |
 | **Centerline Shifting (Hub Lines)** | Output line layer representing migration between the new and old centerlines. |
 
 ---
@@ -29,7 +31,7 @@ In QGIS, open:
 ## Tool Interface
 
 <p align="center">
-  <img src="images/centerline_shifting_tool.png" alt="RivaPlan Centerline Shifting tool" width="900">
+  <img src="images/centerline_shifting_tool.PNG" alt="RivaPlan Centerline Shifting tool" width="900">
 </p>
 
 ---
@@ -63,7 +65,7 @@ Centerline shifting is calculated through the following workflow:
 The output is a line layer connecting corresponding positions on the new and old centerlines.
 
 <p align="center">
-  <img src="images/centerline_shifting_output.png" alt="Centerline shifting output generated using RivaPlan" width="900">
+  <img src="images/centerline_shifting_output.PNG" alt="Centerline shifting output generated using RivaPlan" width="900">
 </p>
 
 Important output attributes include:
@@ -73,7 +75,9 @@ Important output attributes include:
 | **Chainage** | Distance along the new centerline. |
 | **Shift** | Magnitude of centerline displacement. |
 | **Direction** | Direction of movement: Left, Right, or No Shift. |
-| **SignedShift** | Directional shifting value, with leftward movement represented by negative values and rightward movement by positive values. |
+| **SignedShift** | Signed newer-vs-older displacement relative to downstream-oriented reference: **negative downstream-left; positive downstream-right**. |
+| **QC_Status** | `VALID`, `REVIEW` or an unresolved-intersection status. |
+| **QC_Flags** | Diagnostic reasons such as `SHARP_BEND`, `SHIFT_SPIKE` or `IRREGULAR_PROGRESSION`. |
 
 ---
 
@@ -117,3 +121,16 @@ For reliable results:
 If several intersections occur at one chainage, the algorithm retains the intersection producing the shortest connection to the corresponding new-centerline chainage point.
 
 Intermediate processing layers are temporary; the final hub-line layer is returned as the primary output.
+
+## Advanced parameters and review flags
+
+| Setting | Default | Meaning |
+|---|---:|---|
+| Sharp-bend threshold | 10° | Flags abrupt local directional changes near a transect (`SHARP_BEND`). |
+| Shift-spike multiplier | 2.0 | Compares a measured shift against nearby samples (`SHIFT_SPIKE`). |
+| Centerline progression lower factor | 0.5 | Lower expected along-old-centerline progression relative to the chainage step. |
+| Centerline progression upper factor | 1.5 | Upper expected along-old-centerline progression (`IRREGULAR_PROGRESSION` if violated). |
+
+QC flags signal measurements needing inspection; valid measured displacement lines are not automatically deleted. Multiple line intersections are resolved by selecting the nearest crossing **along the perpendicular transect**. Ensure the newer centerline runs upstream to downstream before interpreting signed displacement. Reversing reference direction changes the sign convention.
+
+[Return to tool documentation](README.md)

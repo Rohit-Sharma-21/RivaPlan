@@ -1,15 +1,15 @@
 [general]
 name=RivaPlan
 description=RivaPlan automates river planform morphology analysis in QGIS.
-about=RivaPlan is a QGIS Processing plugin for automated river planform morphology analysis. The current version includes seven tools: bank lines to centerline, reverse line direction, river width, bankline shifting, centerline shifting, line sinuosity, and local curvature. It includes configurable transect searches, geometry validation, and migration quality-control flags.
-version=2.1.0
+about=RivaPlan is an experimental QGIS Processing plugin with seven tools: bank lines to centerline, reverse line direction, river width, bankline shifting, centerline shifting, line sinuosity, and local curvature. It provides configurable processing parameters, geometry validation, migration quality-control flags, and reach-scale river corridor analysis. Version 2.1.1 adds an adjustable bank-exclusion buffer distance and further centerline-generation diagnostics.
+version=2.1.1
 qgisMinimumVersion=3.28
 author=Rohit Sharma
 email=r_sharma@ce.iitr.ac.in
 
 homepage=https://github.com/Rohit-Sharma-21/RivaPlan
 repository=https://github.com/Rohit-Sharma-21/RivaPlan
-tracker=https://github.com/Rohit-Sharma-21/RivaPlan/tree/main/issues
+tracker=https://github.com/Rohit-Sharma-21/RivaPlan/issues
 
 icon=logo.png
 category=Vector

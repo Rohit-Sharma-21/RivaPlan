@@ -30,7 +30,7 @@ In QGIS, open:
 ## Tool Interface
 
 <p align="center">
-  <img src="images/sinuosity_tool.png" alt="RivaPlan sinuosity analysis options" width="900">
+  <img src="images/sinuosity_options.png" alt="RivaPlan sinuosity analysis options" width="900">
 </p>
 
 ---
@@ -67,7 +67,7 @@ produces windows approximately corresponding to:
 - 6–16 km
 - and so on.
 
-Only complete sliding windows are generated; windows extending beyond the end of the input centerline are not included.
+An incomplete terminal window may be retained and identified by the output `QC_Status` field. Compare only like-sized windows for consistent interpretation.
 
 ---
 
@@ -98,7 +98,7 @@ A value close to `1.0` represents a relatively straight channel, while progressi
 The output is a line layer containing the individual sinuosity analysis windows.
 
 <p align="center">
-  <img src="images/sinuosity_output.png" alt="Sinuosity analysis output generated using RivaPlan" width="900">
+  <img src="images/sinuosity_outputs.PNG" alt="Sinuosity analysis output generated using RivaPlan" width="900">
 </p>
 
 The output attribute table contains:
@@ -112,6 +112,7 @@ The output attribute table contains:
 | **Len_m** | Curvilinear length of the centerline substring. |
 | **Chord_m** | Straight-line distance between the substring endpoints. |
 | **Sinuosity** | Ratio of curvilinear length to chord length. |
+| **QC_Status** | Identifies complete and incomplete windows or invalid/zero-chord cases. |
 
 ---
 
@@ -149,4 +150,12 @@ The default window length is **1 km**.
 
 For sliding-window analysis, the default step is **100 m**.
 
-Mode 1 permits a shorter final segment at the downstream end, whereas Mode 2 includes only complete windows.
+Short terminal windows are retained when generated and flagged `INCOMPLETE` rather than silently treated as full-length windows. Where chord length is zero, do not interpret the resulting ratio as a valid sinuosity.
+
+## Advanced setting and comparison guidance
+
+- **Working CRS:** optional; defaults to input line CRS but must be projected in metres.
+- **Fixed mode:** consecutive non-overlapping windows. **Sliding mode:** overlapping windows stepped by the selected shift.
+- **Incomplete windows:** compare separately from full-length windows or exclude them in a consistent analysis protocol.
+
+[Return to tool documentation](README.md)

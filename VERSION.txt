@@ -1,16 +1,16 @@
-RivaPlan v2.1.0
+RivaPlan v2.1.1
 
-Release type: QGIS Processing plugin update
-Release year: 2026
-Status: Experimental; local testing completed, public v2.1.0 release pending
+Release type: Focused centerline-generation maintenance and documentation update
+Release date: 12 November 2026
+Status: Experimental; v2.1.1 prepared for submission to the QGIS Plugin Repository
 
 Software name: RivaPlan
 QGIS plugin package identifier: Planform_Morphology
 Programming language: Python / PyQGIS
-Software environment tested: QGIS 3.40.13 (Windows)
-Minimum QGIS version declared in metadata: 3.28 (not yet independently verified for v2.1.0)
+Windows development/test environment: QGIS 3.40.13
+Minimum QGIS version declared in metadata: 3.28 (not verified as a compatible minimum)
 
-Included processing scripts (7 tools):
+Included Processing tools (7):
 1. generate_centerline.py — Bank lines to centerline
 2. reverse_line_direction.py — Reverse Line Direction
 3. width.py — River Width
@@ -19,27 +19,27 @@ Included processing scripts (7 tools):
 6. sinuosity.py — Line sinuosity
 7. curvature.py — Local Curvature
 
-Major updates in v2.1.0:
-- Added the Reverse Line Direction tool for user-controlled reversal of input polylines.
-- Added adjustable bankline densification and enhanced geometry validation.
-- Updated width and migration transect search and intersection handling.
-- Added migration quality-control flags: SHARP_BEND, SHIFT_SPIKE, and IRREGULAR_PROGRESSION.
-- Standardized downstream-oriented direction guidance and bankline inward/outward displacement reporting.
-- Improved Processing help and diagnostic information.
+Changes specific to v2.1.1:
+- Centerline-generation bank-exclusion buffer distance is now adjustable (default 0.50 m).
+- Refined Voronoi clipping/filtering and Dijkstra route tracing within the centerline algorithm.
+- Added centerline containment and bank-crossing diagnostic messages.
+- Expanded documentation, interface screenshots, and natural/synthetic sample-data descriptions.
 
-Verification status:
-- All seven tools loaded and were tested locally in QGIS.
-- 16 of 16 synthetic regression checks passed in the QGIS Python Console and a standalone QGIS Python environment on Windows.
-- The GitHub Actions Linux workflow has not yet been verified; no numerical code-coverage percentage is claimed.
+Earlier major update, v2.1.0:
+- Added the seventh tool (Reverse Line Direction).
+- Improved centerline and width geometry handling, configurable processing parameters, downstream-oriented migration calculations, quality-control flags, sinuosity, curvature, and validation.
+- Added automated regression testing and GitHub Actions.
 
-Repository:
-https://github.com/Rohit-Sharma-21/RivaPlan
+Verification:
+- Current code: 16/16 standalone regression checks passed on Windows after the v2.1.1 centerline update.
+- Adjustable bank-exclusion buffer tested interactively in QGIS.
+- The earlier v2.1.0 revision also passed the GitHub Actions Ubuntu workflow. A fresh Ubuntu CI run for v2.1.1 remains to be confirmed after pushing the new source code.
+- No code-coverage percentage, maximum vertex capacity, or universal version compatibility is claimed.
 
-Official QGIS plugin listing (existing package identifier):
-https://plugins.qgis.org/plugins/Planform_Morphology/
+Repository: https://github.com/Rohit-Sharma-21/RivaPlan
+Official QGIS listing: https://plugins.qgis.org/plugins/Planform_Morphology/
 
-Earlier reviewer-access archive DOI (v0.2.0; not a DOI for v2.1.0):
+Earlier reviewer-access archive (separate version, not v2.1.1 DOI):
 https://doi.org/10.5281/zenodo.20740988
 
-Release note:
-The v2.1.0 public plugin update is being prepared. Do not cite the older reviewer-access archive as the DOI of this version unless a matching archival release has been created.
+For detailed version-by-version changes, see CHANGELOG.md.

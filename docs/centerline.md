@@ -20,20 +20,22 @@ In QGIS, open:
 |---|---|
 | **Input Left Bank Layer** | Polyline representing one river bank. |
 | **Input Right Bank Layer** | Polyline representing the opposite river bank. |
-| **CRS** | Projected coordinate reference system used during processing. |
-| **Centerline** | Output vector layer containing the generated river centerline. |
+| **Working CRS (advanced)** | Optional projected CRS in metres; defaults to left bank CRS. |
+| **Bankline densification interval (advanced)** | Spacing in metres for adding bank vertices; default **5 m**, adjustable (positive value). |
+| **Bank-exclusion buffer distance (advanced)** | Dissolved buffer around the two banks used to filter nearby Voronoi segments; default **0.50 m**, adjustable (positive value). |
+| **Centerline** | Output vector line layer containing the generated river centerline. |
 
-A projected CRS is recommended because the algorithm uses distance-based geometric operations.
+A **projected working CRS with metre units is required**. Each bank input must contain exactly **one continuous line feature**; the banklines must not intersect or overlap. Inputs with different CRSs are reprojected to the selected working CRS.
 
 ---
 
 ## Tool Interface
 
 <p align="center">
-  <img src="images/centerline_generation_tool.png" alt="RivaPlan centerline generation tool" width="900">
+  <img src="images/bankline_to_centerline.PNG" alt="RivaPlan centerline generation tool" width="900">
 </p>
 
-The user supplies the left and right bankline layers, selects an appropriate projected CRS, and defines the output centerline layer.
+Supply one continuous left and right bankline feature, select the output, and expand **Advanced Parameters** to adjust working CRS, densification and bank-exclusion distance. For narrow channels with network disconnections, testing a smaller positive exclusion distance may help, but successful reconstruction is not guaranteed.
 
 ---
 
@@ -43,17 +45,17 @@ The centerline is generated through the following automated workflow:
 
 1. The first and last vertices of both river banks are extracted.
 
-2. The four bank endpoints are paired to form two end caps using the combination that minimizes the total connection distance.
+2. The four bank endpoints are paired to form two end caps by evaluating geometrically valid cross-bank pairings and selecting the shortest valid combination.
 
 3. The two banklines and end caps are combined to form a closed river-channel polygon.
 
-4. The river banklines are densified internally at a **5 m interval**.
+4. The river banklines are densified at the **user-selected spacing (5 m default)**.
 
 5. Voronoi polygons are generated from the densified bank vertices and converted to Voronoi line segments.
 
 6. The Voronoi network is clipped to the river-channel polygon.
 
-7. Voronoi segments located immediately adjacent to the banklines are filtered from the network using an internal **0.50 map-unit bank-exclusion distance**.
+7. Voronoi segments located immediately adjacent to the banklines are filtered from the network using an a **user-selected bank-exclusion buffer (0.50 m default)**; a single dissolved buffer covers both banks.
 
 8. The remaining Voronoi segments are converted into an undirected graph in which segment length represents traversal cost.
 
@@ -70,7 +72,7 @@ The centerline is generated through the following automated workflow:
 The tool produces a vector line representing the generated river centerline.
 
 <p align="center">
-  <img src="images/centerline_generation_output.png" alt="River centerline generated using RivaPlan" width="900">
+  <img src="images/generated_centerline.PNG" alt="River centerline generated using RivaPlan" width="900">
 </p>
 
 The generated centerline can subsequently be used as input for other RivaPlan tools, including:
@@ -97,6 +99,17 @@ For reliable centerline generation:
 
 ## Notes
 
-The **5 m bank densification interval** and **0.50 map-unit bank-exclusion distance** are currently fixed internal parameters and do not require user input.
+The **5 m densification interval** and **0.50 m bank-exclusion buffer distance** are editable **advanced parameters**, not fixed constants. More closely spaced vertices generally increase the Voronoi processing load. Very large buffer distances may disconnect the usable Voronoi network.
 
 Intermediate processing layers are generated as temporary QGIS layers, while only the final centerline is returned as the primary output.
+
+## Additional processing checks and limitations
+
+- The tool evaluates the two cross-bank end-cap pairings and rejects invalid closures. For strongly folded reaches, inspect any end-cap warning in the processing log.
+- Voronoi segments are clipped to the constructed channel polygon, filtered against the bank-exclusion buffer, and connected through a length-weighted undirected graph. Dijkstra's algorithm traces an ordered start-to-end line.
+- Processing logs report timings for preprocessing, Voronoi filtering, graph construction and route extraction. Diagnostics warn if the final route lies outside the selected polygon or crosses a bank.
+- The centerline represents **one analysis corridor**. Braided rivers can be analysed using their two outer boundaries, but internal anabranches are not separately extracted. The tool does not automatically segment entire river networks.
+- The maximum supported number of vertices has **not** been established. Runtime and memory use depend on reach length, geometry and densification. Always inspect the resulting line in difficult bends.
+- QGIS may produce a disconnected Voronoi network if geometry is unsuitable or too much linework is removed by the buffer; in that case the algorithm reports that no connected route was found.
+
+[Return to tool documentation](README.md)
