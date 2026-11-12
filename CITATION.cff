@@ -1,26 +1,23 @@
 cff-version: 1.2.0
-message: "If you use RivaPlan in your research, please cite the software and the associated publication when available."
-
-title: "RivaPlan: An automated QGIS toolbox for river planform morphology analysis"
-
+title: "RivaPlan: A QGIS Processing plugin for river planform morphology analysis"
+message: "If you use RivaPlan, please cite this software repository and the associated journal article when available."
 type: software
-
 authors:
-  - family-names: "Sharma"
-    given-names: "Rohit"
-
-  - family-names: "Ahmad"
-    given-names: "Zulfequar"
-
-  - family-names: "Garg"
-    given-names: "Rahul Dev"
-
-version: "2.0.0"
-
-date-released: "2026-07-15"
-
-url: "https://github.com/Rohit-Sharma-21/RivaPlan"
-
+  - family-names: Sharma
+    given-names: Rohit
+version: "2.1.1"
 repository-code: "https://github.com/Rohit-Sharma-21/RivaPlan"
-
-license: "GPL-3.0"
+url: "https://plugins.qgis.org/plugins/Planform_Morphology/"
+abstract: "RivaPlan is an open-source QGIS Processing plugin providing seven tools for river corridor centerline generation, line-direction reversal, river width, bankline and centerline shifting, sinuosity, and local curvature analysis. Version 2.1.1 improves centerline generation with a user-adjustable bank-exclusion buffer and diagnostics."
+keywords:
+  - QGIS
+  - PyQGIS
+  - river planform morphology
+  - river centerline
+  - river width
+  - bankline migration
+  - centerline migration
+  - sinuosity
+  - curvature
+  - fluvial geomorphology
+license: GPL-3.0-only
