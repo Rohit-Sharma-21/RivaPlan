@@ -32,7 +32,7 @@ A **projected working CRS with metre units is required**. Each bank input must c
 ## Tool Interface
 
 <p align="center">
-  <img src="images/bankline_to_centerline.PNG" alt="RivaPlan centerline generation tool" width="900">
+  <img src="images/bankline_to_centerline.png" alt="RivaPlan centerline generation tool" width="900">
 </p>
 
 Supply one continuous left and right bankline feature, select the output, and expand **Advanced Parameters** to adjust working CRS, densification and bank-exclusion distance. For narrow channels with network disconnections, testing a smaller positive exclusion distance may help, but successful reconstruction is not guaranteed.
@@ -72,7 +72,7 @@ The centerline is generated through the following automated workflow:
 The tool produces a vector line representing the generated river centerline.
 
 <p align="center">
-  <img src="images/generated_centerline.PNG" alt="River centerline generated using RivaPlan" width="900">
+  <img src="images/generated_centerline.png" alt="River centerline generated using RivaPlan" width="900">
 </p>
 
 The generated centerline can subsequently be used as input for other RivaPlan tools, including:

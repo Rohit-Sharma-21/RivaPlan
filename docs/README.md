@@ -2,7 +2,7 @@
 
 RivaPlan is an experimental, open-source **QGIS Processing plugin** for river planform analysis. **Seven tools** are documented below, with input/output guidance, advanced controls and representative interface and result screenshots.
 
-<p align="center"><img src="images/introduce_rivaplan.PNG" alt="RivaPlan provider with seven tools in QGIS Processing Toolbox" width="900"></p>
+<p align="center"><img src="images/introduce_rivaplan.png" alt="RivaPlan provider with seven tools in QGIS Processing Toolbox" width="900"></p>
 
 ## Processing tools
 

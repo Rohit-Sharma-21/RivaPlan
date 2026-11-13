@@ -74,7 +74,7 @@ Bankline shifting is calculated through the following workflow:
 The final output is a **line layer** containing old-to-new bankline displacement segments associated with reference-centerline chainage locations.
 
 <p align="center">
-  <img src="images/bankline_shifting_outputs.PNG" alt="Bankline shifting output generated using RivaPlan" width="900">
+  <img src="images/bankline_shifting_outputs.png" alt="Bankline shifting output generated using RivaPlan" width="900">
 </p>
 
 Important output attributes include:

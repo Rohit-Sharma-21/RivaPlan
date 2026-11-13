@@ -31,7 +31,7 @@ In QGIS, open:
 ## Tool Interface
 
 <p align="center">
-  <img src="images/centerline_shifting_tool.PNG" alt="RivaPlan Centerline Shifting tool" width="900">
+  <img src="images/centerline_shifting_tool.png" alt="RivaPlan Centerline Shifting tool" width="900">
 </p>
 
 ---
@@ -65,7 +65,7 @@ Centerline shifting is calculated through the following workflow:
 The output is a line layer connecting corresponding positions on the new and old centerlines.
 
 <p align="center">
-  <img src="images/centerline_shifting_output.PNG" alt="Centerline shifting output generated using RivaPlan" width="900">
+  <img src="images/centerline_shifting_output.png" alt="Centerline shifting output generated using RivaPlan" width="900">
 </p>
 
 Important output attributes include:

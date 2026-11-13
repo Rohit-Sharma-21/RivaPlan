@@ -88,7 +88,7 @@ This allows the two curvature approaches to be compared directly within one outp
 The output is a point layer containing curvature measurements along the river centerline.
 
 <p align="center">
-  <img src="images/curvature_outputs.PNG" alt="Local curvature output generated using RivaPlan" width="900">
+  <img src="images/curvature_outputs.png" alt="Local curvature output generated using RivaPlan" width="900">
 </p>
 
 All modes contain the following basic attributes:

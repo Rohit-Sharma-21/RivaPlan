@@ -34,7 +34,7 @@ A projected CRS in **metres is required** for measurements in metres. Verify tha
 ## Tool Interface
 
 <p align="center">
-  <img src="images/river_width_tool.PNG" alt="RivaPlan River Width tool" width="900">
+  <img src="images/river_width_tool.png" alt="RivaPlan River Width tool" width="900">
 </p>
 
 The user supplies the left and right banklines, the corresponding river centerline, an appropriate projected CRS, and the required chainage interval.
@@ -72,7 +72,7 @@ River width is calculated through the following workflow:
 The output is a vector line layer containing the river-width transects.
 
 <p align="center">
-  <img src="images/width_lines_output.PNG" alt="River width transects generated using RivaPlan" width="900">
+  <img src="images/width_lines_output.png" alt="River width transects generated using RivaPlan" width="900">
 </p>
 
 Each retained transect corresponds to a measurement location along the river centerline.

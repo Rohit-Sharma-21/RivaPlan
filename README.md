@@ -24,7 +24,7 @@ The tools are intended primarily for **river-reach and outer-corridor analyses**
 ## RivaPlan in QGIS
 
 <p align="center">
-  <img src="docs/images/introduce_rivaplan.PNG" alt="RivaPlan Processing Toolbox containing seven algorithms" width="850">
+  <img src="docs/images/introduce_rivaplan.png" alt="RivaPlan Processing Toolbox containing seven algorithms" width="850">
 </p>
 
 ## Seven Processing tools
@@ -83,33 +83,33 @@ Detailed explanations, field definitions and advanced settings are in the [tool 
 
 ### Centerline generation
 
-<p align="center"><img src="docs/images/generated_centerline.PNG" alt="Example generated river centerline" width="850"></p>
+<p align="center"><img src="docs/images/generated_centerline.png" alt="Example generated river centerline" width="850"></p>
 
 ### Reverse Line Direction
 
-<p align="center"><img src="docs/images/reverse_centerline_output.PNG" alt="Line-direction reversal example" width="850"></p>
+<p align="center"><img src="docs/images/reverse_centerline_output.png" alt="Line-direction reversal example" width="850"></p>
 
 The reversal changes vertex order, **not** the line shape or thickness. Direction arrows in the visualization indicate the stored vertex order, not necessarily water flow direction.
 
 ### River Width
 
-<p align="center"><img src="docs/images/width_lines_output.PNG" alt="Width-transect output" width="850"></p>
+<p align="center"><img src="docs/images/width_lines_output.png" alt="Width-transect output" width="850"></p>
 
 ### Centerline shifting
 
-<p align="center"><img src="docs/images/centerline_shifting_output.PNG" alt="Centerline displacement example" width="850"></p>
+<p align="center"><img src="docs/images/centerline_shifting_output.png" alt="Centerline displacement example" width="850"></p>
 
 ### Bankline Shifting
 
-<p align="center"><img src="docs/images/bankline_shifting_outputs.PNG" alt="Bankline displacement example" width="850"></p>
+<p align="center"><img src="docs/images/bankline_shifting_outputs.png" alt="Bankline displacement example" width="850"></p>
 
 ### Line sinuosity
 
-<p align="center"><img src="docs/images/sinuosity_outputs.PNG" alt="Sinuosity analysis output" width="850"></p>
+<p align="center"><img src="docs/images/sinuosity_outputs.png" alt="Sinuosity analysis output" width="850"></p>
 
 ### Local Curvature
 
-<p align="center"><img src="docs/images/curvature_outputs.PNG" alt="Local curvature analysis output" width="850"></p>
+<p align="center"><img src="docs/images/curvature_outputs.png" alt="Local curvature analysis output" width="850"></p>
 
 The corresponding **interface screenshots**, including advanced settings, are provided in the individual [tool guides](docs/README.md).
 

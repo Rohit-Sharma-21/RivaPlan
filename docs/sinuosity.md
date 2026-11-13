@@ -98,7 +98,7 @@ A value close to `1.0` represents a relatively straight channel, while progressi
 The output is a line layer containing the individual sinuosity analysis windows.
 
 <p align="center">
-  <img src="images/sinuosity_outputs.PNG" alt="Sinuosity analysis output generated using RivaPlan" width="900">
+  <img src="images/sinuosity_outputs.png" alt="Sinuosity analysis output generated using RivaPlan" width="900">
 </p>
 
 The output attribute table contains:

@@ -15,7 +15,7 @@ The **Reverse Line Direction** tool reverses the vertex order of each input line
 
 ## Tool interface
 
-<p align="center"><img src="images/reverse_centerline_tool.PNG" alt="RivaPlan Reverse Line Direction dialog" width="900"></p>
+<p align="center"><img src="images/reverse_centerline_tool.png" alt="RivaPlan Reverse Line Direction dialog" width="900"></p>
 
 ## Method and use
 
@@ -27,7 +27,7 @@ The **Reverse Line Direction** tool reverses the vertex order of each input line
 
 ## Example output
 
-<p align="center"><img src="images/reverse_centerline_output.PNG" alt="Original and reversed centerline vertex directions" width="900"></p>
+<p align="center"><img src="images/reverse_centerline_output.png" alt="Original and reversed centerline vertex directions" width="900"></p>
 
 **Important:** The result follows the identical map path in reverse order. If the input and output are displayed directly on top of each other, only arrow markers or vertices can reveal the reversed direction. Line thickness itself is not a direction measure.
 
